@@ -5,6 +5,9 @@ var mongoose = require("mongoose");
 var bodyparser = require("body-parser");
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
+
 
 var dishRoutes = require("./routes/dishRouter.js");
 var promoRoutes = require("./routes/promoRouter.js");
@@ -20,6 +23,9 @@ mongoose.connect('mongodb://127.0.0.1/node_examples',{ useNewUrlParser: true, us
 app.use(methodOverride("_method"));
 app.use(bodyparser.json());
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(session({
 	name: 'session-id',
 	secret: '12345-67890-09876-54321',
@@ -31,23 +37,16 @@ app.use(session({
 app.use('/users', usersRouter);
 
 function auth (req, res, next) {
-    console.log(req.session);
+    console.log(req.user);
 
-  if(!req.session.user) {
+    if (!req.user) {
       var err = new Error('You are not authenticated!');
       err.status = 403;
-      return next(err);
-  }
-  else {
-    if (req.session.user === 'authenticated') {
-      next();
+      next(err);
     }
     else {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      return next(err);
+          next();
     }
-  }
 }
 
 app.use(auth);
