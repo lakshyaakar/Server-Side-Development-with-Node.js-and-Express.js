@@ -59,7 +59,7 @@ router.post('/:leaderId', authenticate.verifyUser, function(req, res){
 });
 
 router.put('/:leaderId', authenticate.verifyUser, function(req, res){
-  Dishes.findByIdAndUpdate(req.params.dishId, {
+  Leader.findByIdAndUpdate(req.params.dishId, {
     $set: req.body
 },function(err,updatedLeader){
     if(err)
