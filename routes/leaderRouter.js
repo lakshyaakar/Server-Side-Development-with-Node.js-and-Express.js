@@ -1,8 +1,10 @@
 var express = require("express");
 var router = express.Router();
 var Leader = require("../models/leaders.js");
+var authenticate = require('../authenticate.js');
 
-router.get("/leaders",function(req,res){
+
+router.get("/",function(req,res){
 	Leader.find({},function(err,leader){
     if(err)
       console.log("Leaders not found");
@@ -13,7 +15,7 @@ router.get("/leaders",function(req,res){
   });
 });
 
-router.post('/leaders', function(req, res){
+router.post('/', authenticate.verifyUser, function(req, res){
   Leader.create(req.body, function(err,leader){
       if(err)
         console.log(err);
@@ -24,12 +26,12 @@ router.post('/leaders', function(req, res){
   });
 });
 
-router.put('/leaders', function(req, res){
+router.put('/', authenticate.verifyUser, function(req, res){
   res.statusCode = 403;
   res.send('PUT operation not supported on /leaders');
 });
 
-router.delete('/leaders', function(req, res){
+router.delete('/', authenticate.verifyUser, function(req, res){
     Leader.remove({},function(err,leader){
       if(err)
         console.log(err);
@@ -40,7 +42,7 @@ router.delete('/leaders', function(req, res){
     });
 });
 
-router.get("/leaders/:leaderId",function(req,res){
+router.get("/:leaderId",function(req,res){
     Leader.findById(req.params.leaderId, function(err,foundLeader){
       if(err)
         console.log("Leader not found");
@@ -51,12 +53,12 @@ router.get("/leaders/:leaderId",function(req,res){
     });
 });
 
-router.post('/leaders/:leaderId', function(req, res){
+router.post('/:leaderId', authenticate.verifyUser, function(req, res){
   res.statusCode = 403;
   res.send('POST operation not supported on /leaders/'+ req.params.leaderId);
 });
 
-router.put('/leaders/:leaderId', function(req, res){
+router.put('/:leaderId', authenticate.verifyUser, function(req, res){
   Dishes.findByIdAndUpdate(req.params.dishId, {
     $set: req.body
 },function(err,updatedLeader){
@@ -69,7 +71,7 @@ router.put('/leaders/:leaderId', function(req, res){
   });
 });
 
-router.delete('/leaders/:leaderId', function(req, res){
+router.delete('/:leaderId', authenticate.verifyUser, function(req, res){
   Leader.findByIdAndRemove(req.params.leaderId, function(err,leader){
     if(err)
       console.log(err);
