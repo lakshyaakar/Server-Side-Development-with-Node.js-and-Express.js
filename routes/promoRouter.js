@@ -59,7 +59,7 @@ router.post('/:promoId', authenticate.verifyUser, function(req, res){
 });
 
 router.put('/:promoId', authenticate.verifyUser, function(req, res){
-  Promo.findByIdAndUpdate(req.params.dishId, {
+  Dishes.findByIdAndUpdate(req.params.dishId, {
     $set: req.body
 },function(err,updatedPromo){
     if(err)

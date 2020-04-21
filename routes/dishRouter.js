@@ -4,7 +4,7 @@ var Dish = require("../models/dishes.js");
 var authenticate = require('../authenticate.js');
 
 router.get("/",function(req,res){
-	Dish.find({}).populate('comments.author').exec(function(err,dish){
+	Dish.find({},function(err,dish){
     if(err)
       console.log("Dishes not found");
     else{
@@ -48,7 +48,7 @@ router.delete('/', authenticate.verifyUser, function(req, res){
 });
 
 router.get("/:dishId",function(req,res){
-    Dish.findById(req.params.dishId).populate("comments.author").exec(function(err,foundDish){
+    Dish.findById(req.params.dishId, function(err,foundDish){
       if(err)
         console.log("Dish not found");
       else{
@@ -66,7 +66,7 @@ router.post('/:dishId', authenticate.verifyUser, function(req, res){
 });
 
 router.put('/:dishId', authenticate.verifyUser, function(req, res){
-  Dish.findByIdAndUpdate(req.params.dishId, {
+  Dishes.findByIdAndUpdate(req.params.dishId, {
     $set: req.body
 },function(err,updatedDish){
     if(err)
@@ -95,52 +95,41 @@ router.delete('/:dishId', authenticate.verifyUser, function(req, res){
 });
 
 router.get('/:dishId/comments', (req,res,next) => {
-    Dish.findById(req.params.dishId)
-    .populate('comments.author')    
+    Dishes.findById(req.params.dishId)
     .then((dish) => {
-        if (dish != null && dish.comments.id(req.params.commentId) != null) {
+        if (dish != null) {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.json(dish.comments.id(req.params.commentId));
+            res.json(dish.comments);
         }
-        else if (dish == null) {
+        else {
             err = new Error('Dish ' + req.params.dishId + ' not found');
             err.status = 404;
             return next(err);
-        }
-        else {
-            err = new Error('Comment ' + req.params.commentId + ' not found');
-            err.status = 404;
-            return next(err);            
         }
     }, (err) => next(err))
     .catch((err) => next(err));
 });
 
 router.post('/:dishId/comments',authenticate.verifyUser, (req, res, next) => {
-  Dish.findById(req.params.dishId)
-  .then((dish) => {
-      if (dish != null) {
-          req.body.author = req.user._id;
-          dish.comments.push(req.body);
-          dish.save()
-          .then((dish) => {
-              Dish.findById(dish._id)
-              .populate('comments.author')
-              .then((dish) => {
-                  res.statusCode = 200;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.json(dish);
-              })            
-          }, (err) => next(err));
-      }
-      else {
-          err = new Error('Dish ' + req.params.dishId + ' not found');
-          err.status = 404;
-          return next(err);
-      }
-  }, (err) => next(err))
-  .catch((err) => next(err));
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        if (dish != null) {
+            dish.comments.push(req.body);
+            dish.save()
+            .then((dish) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(dish);                
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
 });
 
 router.put('/:dishId/comments',authenticate.verifyUser, (req, res, next) => {
@@ -150,7 +139,7 @@ router.put('/:dishId/comments',authenticate.verifyUser, (req, res, next) => {
 });
 
 router.delete('/:dishId/comments',authenticate.verifyUser, (req, res, next) => {
-    Dish.findById(req.params.dishId)
+    Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
             for (var i = (dish.comments.length -1); i >= 0; i--) {
@@ -174,26 +163,25 @@ router.delete('/:dishId/comments',authenticate.verifyUser, (req, res, next) => {
 
 
 router.get('/:dishId/comments/:commentId', (req,res,next) => {
-  Dish.findById(req.params.dishId)
-  .populate('comments.author')    
-  .then((dish) => {
-      if (dish != null && dish.comments.id(req.params.commentId) != null) {
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'application/json');
-          res.json(dish.comments.id(req.params.commentId));
-      }
-      else if (dish == null) {
-          err = new Error('Dish ' + req.params.dishId + ' not found');
-          err.status = 404;
-          return next(err);
-      }
-      else {
-          err = new Error('Comment ' + req.params.commentId + ' not found');
-          err.status = 404;
-          return next(err);            
-      }
-  }, (err) => next(err))
-  .catch((err) => next(err));
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        if (dish != null && dish.comments.id(req.params.commentId) != null) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(dish.comments.id(req.params.commentId));
+        }
+        else if (dish == null) {
+            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Comment ' + req.params.commentId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
 });
 
 router.post('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, next) => {
@@ -202,70 +190,61 @@ router.post('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, n
         + '/comments/' + req.params.commentId);
 });
 
-router.put('/:dishId/comments/:commentId', authenticate.verifyUser, (req, res, next) => {
-  Dish.findById(req.params.dishId)
-  .then((dish) => {
-      if (dish != null && dish.comments.id(req.params.commentId) != null) {
-          if (req.body.rating) {
-              dish.comments.id(req.params.commentId).rating = req.body.rating;
-          }
-          if (req.body.comment) {
-              dish.comments.id(req.params.commentId).comment = req.body.comment;                
-          }
-          dish.save()
-          .then((dish) => {
-              Dish.findById(dish._id)
-              .populate('comments.author')
-              .then((dish) => {
-                  res.statusCode = 200;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.json(dish);  
-              })              
-          }, (err) => next(err));
-      }
-      else if (dish == null) {
-          err = new Error('Dish ' + req.params.dishId + ' not found');
-          err.status = 404;
-          return next(err);
-      }
-      else {
-          err = new Error('Comment ' + req.params.commentId + ' not found');
-          err.status = 404;
-          return next(err);            
-      }
-  }, (err) => next(err))
-  .catch((err) => next(err));
+router.put('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, next) => {
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        if (dish != null && dish.comments.id(req.params.commentId) != null) {
+            if (req.body.rating) {
+                dish.comments.id(req.params.commentId).rating = req.body.rating;
+            }
+            if (req.body.comment) {
+                dish.comments.id(req.params.commentId).comment = req.body.comment;                
+            }
+            dish.save()
+            .then((dish) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(dish);                
+            }, (err) => next(err));
+        }
+        else if (dish == null) {
+            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Comment ' + req.params.commentId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
 });
 
 router.delete('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, next) => {
-  Dish.findById(req.params.dishId)
-  .then((dish) => {
-      if (dish != null && dish.comments.id(req.params.commentId) != null) {
-
-          dish.comments.id(req.params.commentId).remove();
-          dish.save()
-          .then((dish) => {
-              Dish.findById(dish._id)
-              .populate('comments.author')
-              .then((dish) => {
-                  res.statusCode = 200;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.json(dish);  
-              })               
-          }, (err) => next(err));
-      }
-      else if (dish == null) {
-          err = new Error('Dish ' + req.params.dishId + ' not found');
-          err.status = 404;
-          return next(err);
-      }
-      else {
-          err = new Error('Comment ' + req.params.commentId + ' not found');
-          err.status = 404;
-          return next(err);            
-      }
-  }, (err) => next(err))
-  .catch((err) => next(err));
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        if (dish != null && dish.comments.id(req.params.commentId) != null) {
+            dish.comments.id(req.params.commentId).remove();
+            dish.save()
+            .then((dish) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(dish);                
+            }, (err) => next(err));
+        }
+        else if (dish == null) {
+            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Comment ' + req.params.commentId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
 });
 
 module.exports = router;
