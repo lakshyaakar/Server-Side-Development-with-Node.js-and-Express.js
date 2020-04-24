@@ -12,21 +12,36 @@ router.get("/",function(req,res){
     res.send("Listing all users");
 });
 
-router.post('/signup', function(req, res){
-    var newUser = new User({username: req.body.username});
-   User.register(newUser, req.body.password, function(err,user){
-      if(err){
-        res.statusCode = 500;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({err: err});
-      }
-      passport.authenticate("local")(req,res,function(){
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({success: true, status: 'Registration Successful!'});
+router.post('/signup', function(req, res, next){
+  User.register(new User({username: req.body.username}), 
+    req.body.password, function(err, user){
+    if(err) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({err: err});
+    }
+    else {
+      if (req.body.firstname)
+        user.firstname = req.body.firstname;
+      if (req.body.lastname)
+        user.lastname = req.body.lastname;
+      user.save(function(err, user){
+        if (err) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({err: err});
+          return ;
+        }
+        passport.authenticate('local')(req, res, function(){
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({success: true, status: 'Registration Successful!'});
+        });
       });
-   });
+    }
+  });
 });
+
 
 
 router.post('/login', passport.authenticate('local'), (req, res) => {
