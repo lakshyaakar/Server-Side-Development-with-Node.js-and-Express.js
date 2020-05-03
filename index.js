@@ -14,6 +14,7 @@ var dishRoutes = require("./routes/dishRouter.js");
 var promoRoutes = require("./routes/promoRouter.js");
 var leaderRoutes = require("./routes/leaderRouter.js");
 var usersRouter = require("./routes/users.js");
+var uploadRouter = require('./routes/uploadRouter');
 
 var Dish = require("./models/dishes.js");
 var Promo = require("./models/leaders.js");
@@ -41,6 +42,7 @@ app.use('/users', usersRouter);
 app.use("/dishes", dishRoutes);
 app.use("/promotions", promoRoutes);
 app.use("/leaders", leaderRoutes);
+app.use('/imageUpload',uploadRouter);
 
 
 app.listen(3000,process.env.IP,function(){
