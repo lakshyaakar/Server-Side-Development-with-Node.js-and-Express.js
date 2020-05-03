@@ -14,7 +14,7 @@ router.get("/",function(req,res){
   .catch((err) => next(err));
 });
 
-router.post('/', authenticate.verifyUser, function(req, res){
+router.post('/', authenticate.verifyUser,authenticate.verifyAdmin, function(req, res){
   Dish.create(req.body, function(err,dish){
       if(err)
         console.log(err);
@@ -27,12 +27,12 @@ router.post('/', authenticate.verifyUser, function(req, res){
   });
 });
 
-router.put('/', authenticate.verifyUser, function(req, res){
+router.put('/', authenticate.verifyUser,authenticate.verifyAdmin, function(req, res){
   res.statusCode = 403;
   res.send('PUT operation not supported on /dishes');
 });
 
-router.delete('/', authenticate.verifyUser, function(req, res){
+router.delete('/', authenticate.verifyUser,authenticate.verifyAdmin, function(req, res){
     Dish.remove({},function(err,dish){
       if(err)
         console.log(err);
@@ -56,12 +56,12 @@ router.get("/:dishId",function(req,res){
   .catch((err) => next(err));
 });
 
-router.post('/:dishId', authenticate.verifyUser, function(req, res){
+router.post('/:dishId', authenticate.verifyUser,authenticate.verifyAdmin, function(req, res){
   res.statusCode = 403;
   res.send('POST operation not supported on /dishes/'+ req.params.dishId);
 });
 
-router.put('/:dishId', authenticate.verifyUser, function(req, res){
+router.put('/:dishId', authenticate.verifyUser,authenticate.verifyAdmin, function(req, res){
   Dish.findByIdAndUpdate(req.params.dishId, {
     $set: req.body
 },function(err,updatedDish){
@@ -76,7 +76,7 @@ router.put('/:dishId', authenticate.verifyUser, function(req, res){
   });
 });
 
-router.delete('/:dishId', authenticate.verifyUser, function(req, res){
+router.delete('/:dishId', authenticate.verifyUser,authenticate.verifyAdmin, function(req, res){
   Dish.findByIdAndRemove(req.params.dishId, function(err,dish){
     if(err)
       console.log(err);
@@ -140,7 +140,7 @@ router.put('/:dishId/comments',authenticate.verifyUser, (req, res, next) => {
         + req.params.dishId + '/comments');
 });
 
-router.delete('/:dishId/comments',authenticate.verifyUser, (req, res, next) => {
+router.delete('/:dishId/comments',authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
     Dish.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
@@ -196,6 +196,7 @@ router.post('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, n
 router.put('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, next) => {
   Dish.findById(req.params.dishId)
   .then((dish) => {
+    if(dish.comments.id(req.params.commentId).author._id.equals(req.user._id)){
       if (dish != null && dish.comments.id(req.params.commentId) != null) {
           if (req.body.rating) {
               dish.comments.id(req.params.commentId).rating = req.body.rating;
@@ -224,13 +225,20 @@ router.put('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, ne
           err.status = 404;
           return next(err);            
       }
-  }, (err) => next(err))
+  }
+  else{
+    err = new Error('You are not Authorized!');
+    err.status = 404;
+    return next(err); 
+  }
+},(err) => next(err))
   .catch((err) => next(err));
 });
 
 router.delete('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res, next) => {
   Dish.findById(req.params.dishId)
   .then((dish) => {
+    if(dish.comments.id(req.params.commentId).author._id.equals(req.user._id)){
       if (dish != null && dish.comments.id(req.params.commentId) != null) {
 
           dish.comments.id(req.params.commentId).remove();
@@ -255,7 +263,13 @@ router.delete('/:dishId/comments/:commentId',authenticate.verifyUser, (req, res,
           err.status = 404;
           return next(err);            
       }
-  }, (err) => next(err))
+  }
+  else{
+    err = new Error('You are not Authorized!');
+    err.status = 404;
+    return next(err); 
+  }
+}, (err) => next(err))
   .catch((err) => next(err));
 });
 
