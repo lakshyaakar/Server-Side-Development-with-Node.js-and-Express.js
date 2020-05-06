@@ -15,10 +15,7 @@ var promoRoutes = require("./routes/promoRouter.js");
 var leaderRoutes = require("./routes/leaderRouter.js");
 var usersRouter = require("./routes/users.js");
 var uploadRouter = require('./routes/uploadRouter');
-
-var Dish = require("./models/dishes.js");
-var Promo = require("./models/leaders.js");
-var Leader = require("./models/promotions.js");
+var favouriteRouter = require("./routes/favouriteRouter.js");
 
 
 mongoose.connect('mongodb://127.0.0.1/node_examples',{ useNewUrlParser: true, useUnifiedTopology: true});
@@ -27,6 +24,17 @@ app.use(methodOverride("_method"));
 app.use(bodyparser.json());
 
 app.use(passport.initialize());
+
+// Secure traffic only
+app.all('*', (req, res, next) => {
+	if (req.secure) {
+	  return next();
+	}
+	else {
+	  res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
+	}
+  });
+  
 // app.use(passport.session());
 
 // app.use(session({
@@ -43,7 +51,7 @@ app.use("/dishes", dishRoutes);
 app.use("/promotions", promoRoutes);
 app.use("/leaders", leaderRoutes);
 app.use('/imageUpload',uploadRouter);
-
+app.use('/favorites',favouriteRouter);
 
 app.listen(3000,process.env.IP,function(){
 	console.log("Server Started!");
