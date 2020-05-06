@@ -90,6 +90,7 @@ favoriteRouter.route('/:dishId')
             }
         }
         else {
+          
             Favorites.create({"user": req.user._id, "dishes": [req.params.dishId]})
             .then((favorite) => {
                 console.log('Favorite Created ', favorite);
